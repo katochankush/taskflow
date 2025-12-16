@@ -1,0 +1,16 @@
+namespace: taskflow
+
+backend:
+  replicas: 3
+  image: taskflow-backend:1.0
+  
+postgres:
+  image: postgres:15-alpine
+  storage: 5Gi
+
+redis:
+  image: redis:7-alpine
+
+config:
+  NODE_ENV: production
+  LOG_LEVEL: info
