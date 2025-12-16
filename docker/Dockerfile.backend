@@ -1,0 +1,49 @@
+# ============================================
+# Build Stage
+# ============================================
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY backend/package*.json ./
+
+# Install dependencies
+RUN npm install --production && \
+    npm cache clean --force
+
+# ============================================
+# Runtime Stage (Multi-stage build)
+# ============================================
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install dumb-init for proper signal handling
+RUN apk add --no-cache dumb-init
+
+# Copy from builder stage
+COPY --from=builder /app/node_modules ./node_modules
+
+# Copy application code
+COPY backend/src ./src
+COPY backend/package*.json ./
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+USER nodejs
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
+
+# Expose port
+EXPOSE 3000
+
+# Use dumb-init to run node process
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start application
+CMD ["node", "src/index.js"]
