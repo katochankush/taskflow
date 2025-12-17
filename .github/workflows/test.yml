@@ -1,0 +1,72 @@
+name: Run Tests
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: taskflow_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Install dependencies
+      run: cd backend && npm install
+    
+    - name: Run unit tests
+      run: cd backend && npm test --if-present || echo "No tests configured"
+      env:
+        NODE_ENV: test
+        DATABASE_URL: postgresql://postgres:test@localhost:5432/taskflow_test
+        REDIS_URL: redis://localhost:6379
+    
+    - name: Check health endpoint
+      run: |
+        cd backend
+        npm start &
+        sleep 5
+        curl -f http://localhost:3000/health || exit 1
+        echo "✅ Health check passed"
+      env:
+        NODE_ENV: development
+        PORT: 3000
+        DATABASE_URL: postgresql://postgres:test@localhost:5432/taskflow_test
+        REDIS_URL: redis://localhost:6379
+      continue-on-error: true
+

@@ -1,0 +1,39 @@
+name: Generate Documentation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'README.md'
+      - 'docs/**'
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Validate README
+      run: |
+        if [ ! -f README.md ]; then
+          echo "❌ README.md is missing"
+          exit 1
+        fi
+        echo "✅ README.md exists"
+    
+    - name: Check documentation format
+      run: |
+        echo "Checking documentation..."
+        if grep -q "## Installation" README.md; then
+          echo "✅ Installation section found"
+        fi
+        if grep -q "## Usage" README.md; then
+          echo "✅ Usage section found"
+        fi
+        if grep -q "## Architecture" README.md; then
+          echo "✅ Architecture section found"
+        fi
+
