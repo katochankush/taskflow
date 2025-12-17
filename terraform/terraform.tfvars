@@ -1,0 +1,11 @@
+aws_region         = "us-east-1"
+environment        = "prod"
+app_name           = "taskflow"
+vpc_cidr           = "10.0.0.0/16"
+eks_version        = "1.27"
+node_group_size    = 2
+node_instance_type = "t3.micro"
+rds_instance_class = "db.t3.micro"
+db_name            = "taskflow"
+db_username        = "postgres"
+db_password        = "TaskflowDB123!"
